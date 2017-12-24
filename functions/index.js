@@ -1,33 +1,42 @@
+'use strict';
+
 const functions = require('firebase-functions');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var app = express();
+const handleText = require('./handleText');
 
-var WEBHOOK_SECRET = functions.config().webhook.secret;
+const app = express();
+const WEBHOOK_SECRET = functions.config().webhook.secret;
 
 app.post('/',
   bodyParser.urlencoded({ extended: true }),
-  function(req, res) {
-      var secret = req.body.secret;
-      if (secret !== WEBHOOK_SECRET) {
-          res.status(403).end();
-          return;
-      }
+  (req, res) => {
+    const secret = req.body.secret;
+    if (secret !== WEBHOOK_SECRET) {
+        return res.status(403).end();
+    }
 
-      if (req.body.event == 'incoming_message') {
-        var content = req.body.content;
-        var from_number = req.body.from_number;
-        var phone_id = req.body.phone_id;
+    if (req.body.event == 'incoming_message') {
+      const input = req.body.content;
+      // const from_number = req.body.from_number;
+      const phoneId = req.body.phone_id;
 
-        // do something with the message, e.g. send an autoreply
-        res.json({
+      handleText(phoneId, input).then(nextQuestion => {
+        return res.status(200).json({
           messages: [
-            { content: "Thanks for your message!" }
+            { content: nextQuestion }
           ]
         });
-      }
-      res.status(200).end();
+      }).catch(err => {
+        console.err('Error: ', err);
+        return res.status(200).json({
+          messages: [
+            { content: 'We encountered an error, please try again later.' }
+          ]
+        });
+      })
+    }
   }
 );
 
