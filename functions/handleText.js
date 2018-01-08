@@ -19,6 +19,7 @@ const handleText = (phoneId, input) => {
     }
     // TODO handle not initialized
     // TODO build in mechanism to bypass first step
+    // TODO build in mechanism to do decision tree (i.e. if patient info already there, don't need to ask for gender, name, etc.)
     step = flow.steps[stepName];
     var data = {};
     data[step.label] = step.transform(input);
@@ -31,7 +32,10 @@ const handleText = (phoneId, input) => {
     next = stepName; // repeat this step
     // TODO retry step
   }).then(() => {
-    return flow.steps[next].question;
+    if (next) {
+      return flow.steps[next].question;
+    }
+    return 'Thanks for completing the questions!';
   });
 };
 

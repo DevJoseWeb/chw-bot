@@ -18,8 +18,9 @@ app.post('/',
     }
 
     if (req.body.event == 'incoming_message') {
+      console.log('request body: ', JSON.stringify(req.body))
       const input = req.body.content;
-      // const from_number = req.body.from_number;
+      const from_number = req.body.from_number;
       const phoneId = req.body.phone_id;
 
       handleText(phoneId, input).then(nextQuestion => {
