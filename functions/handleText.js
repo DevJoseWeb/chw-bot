@@ -8,24 +8,30 @@ const db = admin.database();
 const fs = admin.firestore();
 
 const handleText = (phoneId, input) => {
-  const dbRef = db.ref('in_session/' + phoneId);
+  var dbRef = db.ref('in_session/' + phoneId);
   var next;
   var step;
 
   return dbRef.once('value').then(snapshot => {
-    const stepName = snapshot.val();
+    var stepName = snapshot.val();
+    if (!stepName) {
+      stepName = flow.start;
+    }
     // TODO handle not initialized
-    step = steps[stepName];
-    return fs.collection(...).document(...).set(step.transform(content))
-      
+    // TODO build in mechanism to bypass first step
+    step = flow.steps[stepName];
+    var data = {};
+    data[step.label] = step.transform(input);
+    return fs.collection('patients').doc(phoneId).set(data, {merge: true})
   }).then(() => {
     next = step.next;
     return dbRef.set(next);
   }, err => {
-    console.err('Error writing answer to Firestore', err);
+    console.error('Error writing answer to Firestore', err);
+    next = stepName; // repeat this step
     // TODO retry step
   }).then(() => {
-    return next.question;
+    return flow.steps[next].question;
   });
 };
 
